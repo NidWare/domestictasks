@@ -1,13 +1,11 @@
 import config
 import telebot
 import sqlite3
-from pprint import pprint
 
 db = sqlite3.connect("database.db", check_same_thread=False)
 
 cursor = db.cursor()
 
-cursor.execute("DELETE FROM tasks")
 
 
 from telebot import types
@@ -63,6 +61,11 @@ def createTask(message):
 				ssTasks = '\n- '
 				sTasks2 = maintitle + '- ' + ssTasks.join(sTasks) 
 				bot.send_message(message.chat.id, sTasks2)
+	elif(message.text == 'Отметить задачу выполненной'):
+		markup = types.InlineKeyboardMarkup(row_width=4)
+		for row in cursor.execute("SELECT * FROM tasks WHERE done = 0"):
+			item = types.InlineKeyboardButton(row[0], callback_data='')
+		bot.send_message(message.chat.id, 'Какую задачу вы хотите отметить выполненной: ')
 def askTaskName(message):
 	markup = types.ReplyKeyboardMarkup(row_width=2)
 	itembtn1 = types.KeyboardButton('Да')
