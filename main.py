@@ -1,6 +1,7 @@
 import config
 import telebot
 import sqlite3
+from telebot import types
 
 db = sqlite3.connect("database.db", check_same_thread=False)
 
@@ -8,13 +9,7 @@ cursor = db.cursor()
 
 
 
-from telebot import types
-
-TOKEN = '1129238142:AAGdK5z3tBFnPcRFcaSzootUvvfrYj1YPdY'
-
-bot = telebot.TeleBot(TOKEN)
-
-
+bot = telebot.TeleBot(config.TOKEN)
 
 
 @bot.message_handler(commands=['start'])
@@ -95,6 +90,7 @@ def createTask(message):
 def setDone(message):
 	if(int(message.text) in ids):
 		cursor.execute("UPDATE tasks SET done = 1 WHERE id = {0}".format(message.text))
+		db.commit()
 		markup = types.ReplyKeyboardMarkup(row_width=2)
 		itembtn1 = types.KeyboardButton('Добавить задачу')
 		itembtn2 = types.KeyboardButton('Отметить задачу выполненной')
