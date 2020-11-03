@@ -16,6 +16,7 @@ bot = telebot.TeleBot(TOKEN)
 
 
 
+
 @bot.message_handler(commands=['start'])
 def startmessage(message):
 	markup = types.ReplyKeyboardMarkup(row_width=2)
@@ -62,10 +63,50 @@ def createTask(message):
 				sTasks2 = maintitle + '- ' + ssTasks.join(sTasks) 
 				bot.send_message(message.chat.id, sTasks2)
 	elif(message.text == 'Отметить задачу выполненной'):
-		markup = types.InlineKeyboardMarkup(row_width=4)
+		string = "Введите номер задачи, которую вы хотите отметить как выполненную'\n\n"
+		global ids
+		ids = []
+		names = []
 		for row in cursor.execute("SELECT * FROM tasks WHERE done = 0"):
-			item = types.InlineKeyboardButton(row[0], callback_data='')
-		bot.send_message(message.chat.id, 'Какую задачу вы хотите отметить выполненной: ')
+			ids.append(row[4])
+			names.append(row[0])
+		for i in range(0, len(ids)):
+			string = string + "\n" + str(ids[i]) + ". " + str(names[i])
+
+		msg = bot.send_message(message.chat.id, string)
+
+		bot.register_next_step_handler(msg, setDone)
+		'''	markup = types.InlineKeyboardMarkup(row_width=4)
+		global ids
+		global names
+		global offset
+		global limit
+		ids = []
+		names = []
+		limit = 4
+		offset = 0
+		for row in cursor.execute("SELECT * FROM tasks WHERE done = 0 LIMIT {0}".format(limit)):
+			ids.append(row[4])
+			names.append(row[0])
+		markup.add(types.InlineKeyboardButton(text=ids[0], callback_data=names[0]))
+		bot.send_message(message.chat.id, 'Выберите задачу', reply_markup=markup)
+		
+		IN PROGRESS				'''
+def setDone(message):
+	if(int(message.text) in ids):
+		cursor.execute("UPDATE tasks SET done = 1 WHERE id = {0}".format(message.text))
+		markup = types.ReplyKeyboardMarkup(row_width=2)
+		itembtn1 = types.KeyboardButton('Добавить задачу')
+		itembtn2 = types.KeyboardButton('Отметить задачу выполненной')
+		itembtn3 = types.KeyboardButton('Просмотреть задачи')
+		markup.add(itembtn1, itembtn2, itembtn3)
+		bot.send_message(message.chat.id, 'Отлично, задача отмечена.', reply_markup=markup)
+	else:
+		msg = bot.send_message(message.chat.id, 'Вы ввели неверный ID.')
+		bot.register_next_step_handler(msg, setDone)
+
+
+
 def askTaskName(message):
 	markup = types.ReplyKeyboardMarkup(row_width=2)
 	itembtn1 = types.KeyboardButton('Да')
@@ -88,9 +129,23 @@ def setWarn(message):
 	itembtn3 = types.KeyboardButton('Просмотреть задачи')
 	markup.add(itembtn1, itembtn2, itembtn3)
 	bot.send_message(message.chat.id, 'Отлично, задача добавлена.', reply_markup=markup)
-	cursor.execute("INSERT INTO tasks VALUES ('{0}', '{1}', '0', '0')".format(taskName, warn))
+	cursor.execute("INSERT INTO tasks VALUES ('{0}', '{1}', '0', '0', NULL)".format(taskName, warn))
 	db.commit()
+
+@bot.callback_query_handler(func=lambda call: True)
+def callback_inline(call):
+	try:
+		if call:
+			cursor.execute ("UPDATE tasks SET done = 1 WHERE id = {0}".format(call.data))
+			bot.send_message(call.message.chat.id, 'Задача отмечена как выполенная')
+			bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Выберите задачу, которая выполнена")
+	except Exception as e:
+		print(e)
+
+
+
+
+
 
 
 bot.polling()
-'''hello world'''

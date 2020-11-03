@@ -1,5 +1,5 @@
-list = ['Some shit', 'just shit']
+db = sqlite3.connect("database.db", check_same_thread=False)
 
-str = ''
+cursor = db.cursor()
 
-print(str.join(list))
+cursor.execute("ALTER TABLE table1 ADD COLUMN id TEXT;")
